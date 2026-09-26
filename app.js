@@ -81,7 +81,7 @@ const TEMPLATES = [
 const TRIP_EMOJIS = ['🧳', '✈️', '🚄', '🚗', '🏖️', '⛰️', '❄️', '🌸', '🎡', '🍜', '🏙️', '⛺'];
 
 /* ================= 状态 ================= */
-function defaultState() { return { trips: [], activeTripId: null }; }
+function defaultState() { return { trips: [], activeTripId: null, customLib: {} }; }
 
 function load() {
   try {
@@ -89,6 +89,7 @@ function load() {
     if (!raw) return defaultState();
     const s = JSON.parse(raw);
     if (!s || !Array.isArray(s.trips)) return defaultState();
+    if (!s.customLib || typeof s.customLib !== 'object') s.customLib = {};
     return s;
   } catch (e) { return defaultState(); }
 }
@@ -216,6 +217,7 @@ function heroHTML(trip) {
         </div>
       </div>
       <div class="hero-actions">
+        <button class="btn btn-primary btn-sm" data-action="share-trip">📤 分享行程</button>
         <button class="btn btn-ghost btn-sm" data-action="clear-checked">🧹 清空已勾选</button>
         <button class="btn btn-soft btn-sm" data-action="reset-all">🔄 重新出发</button>
       </div>
@@ -516,22 +518,34 @@ $('#confirmCancel').addEventListener('click', () => {
 /* ================= 物品库弹窗 ================= */
 let libSel = new Set();
 
-function openLibrary() {
-  const trip = activeTrip();
-  if (!trip) return;
-  libSel.clear();
+function renderLibraryBody(trip) {
   $('#libraryBody').innerHTML = CATEGORIES.map((c, ci) => {
-    const chips = PRESET_ITEMS[c.id].map((text, i) => {
+    const customs = state.customLib[c.id] || [];
+    const presetChips = PRESET_ITEMS[c.id].map((text, i) => {
       const exists = trip.items.some(it => it.category === c.id && it.text === text);
-      return `<button class="lib-chip ${exists ? 'exists' : ''}" style="--cat:${c.color};--cat-bg:${c.bg};animation-delay:${ci * 40 + i * 18}ms"
+      const sel = libSel.has(c.id + '\u0000' + text);
+      return `<button class="lib-chip ${exists ? 'exists' : ''}${sel ? ' sel' : ''}" style="--cat:${c.color};--cat-bg:${c.bg};animation-delay:${ci * 40 + i * 14}ms"
                 data-cat="${c.id}" data-text="${esc(text)}" ${exists ? 'disabled' : ''}>${esc(text)}${exists ? ' ✓' : ''}</button>`;
+    }).join('');
+    const customChips = customs.map((text, i) => {
+      const exists = trip.items.some(it => it.category === c.id && it.text === text);
+      const sel = libSel.has(c.id + '\u0000' + text);
+      return `<span class="lib-chip lib-chip-custom ${exists ? 'exists' : ''}${sel ? ' sel' : ''}" style="--cat:${c.color};--cat-bg:${c.bg};animation-delay:${ci * 40 + (PRESET_ITEMS[c.id].length + i) * 14}ms"
+                data-cat="${c.id}" data-text="${esc(text)}" title="我的自定义物品">${esc(text)}<i class="chip-star">★</i><button class="chip-del" data-del-custom="${esc(text)}" data-cat="${c.id}" aria-label="从物品库移除 ${esc(text)}">✕</button></span>`;
     }).join('');
     return `
     <div class="lib-section">
       <div class="lib-head"><span>${c.emoji}</span>${c.name}</div>
-      <div class="lib-chips">${chips}</div>
+      <div class="lib-chips">${presetChips}${customChips}<span class="lib-add"><input class="input input-sm" maxlength="20" placeholder="添加到物品库" aria-label="向${c.name}物品库添加物品"><button class="btn btn-soft btn-sm" data-libadd="${c.id}" aria-label="确认添加到物品库">＋</button></span></div>
     </div>`;
   }).join('');
+}
+
+function openLibrary() {
+  const trip = activeTrip();
+  if (!trip) return;
+  libSel.clear();
+  renderLibraryBody(trip);
   updateLibCount();
   showModal($('#libraryModal'));
 }
@@ -541,13 +555,49 @@ function updateLibCount() {
   $('#libAdd').textContent = libSel.size ? `加入清单（${libSel.size} 件）🎁` : '加入清单 🎁';
 }
 
+function addCustomLib(catId, input) {
+  const text = input.value.trim();
+  if (!text) { shakeEl(input); return; }
+  const list = state.customLib[catId] || (state.customLib[catId] = []);
+  if (PRESET_ITEMS[catId].includes(text) || list.includes(text)) {
+    shakeEl(input); toast('物品库里已经有它啦', '😉'); return;
+  }
+  list.push(text);
+  save();
+  const body = $('#libraryBody');
+  const st = body.scrollTop;
+  renderLibraryBody(activeTrip());
+  body.scrollTop = st;
+  const inp = body.querySelector(`[data-libadd="${catId}"]`)?.parentElement?.querySelector('input');
+  if (inp) inp.focus();
+  toast(`「${text}」已收藏到物品库`, '📦');
+}
+
 $('#libraryBody').addEventListener('click', e => {
+  const del = e.target.closest('.chip-del');
+  if (del) {
+    const cat = del.dataset.cat, text = del.dataset.delCustom;
+    state.customLib[cat] = (state.customLib[cat] || []).filter(t => t !== text);
+    save();
+    renderLibraryBody(activeTrip());
+    toast(`「${text}」已从物品库移除`, '🗑️');
+    return;
+  }
+  const addBtn = e.target.closest('[data-libadd]');
+  if (addBtn) { addCustomLib(addBtn.dataset.libadd, addBtn.parentElement.querySelector('input')); return; }
   const chip = e.target.closest('.lib-chip');
   if (!chip || chip.classList.contains('exists')) return;
   const key = chip.dataset.cat + '\u0000' + chip.dataset.text;
   if (libSel.has(key)) { libSel.delete(key); chip.classList.remove('sel'); }
   else { libSel.add(key); chip.classList.add('sel'); }
   updateLibCount();
+});
+
+$('#libraryBody').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.target.matches('.lib-add input')) {
+    const btn = e.target.parentElement.querySelector('[data-libadd]');
+    if (btn) addCustomLib(btn.dataset.libadd, e.target);
+  }
 });
 
 $('#libAdd').addEventListener('click', () => {
@@ -563,6 +613,124 @@ $('#libAdd').addEventListener('click', () => {
   if (n) { updateAllCatCounts(false); updateProgress(); save(); }
   hideModal($('#libraryModal'));
   toast(`已加入 ${n} 件物品`, '🎁');
+});
+
+/* ================= 分享行程 ================= */
+function encodeTrip(trip) {
+  const payload = {
+    v: 1, n: trip.name, e: trip.emoji, d: trip.destination, t: trip.date,
+    i: trip.items.map(it => [it.category, it.text, it.checked ? 1 : 0]),
+  };
+  return btoa(unescape(encodeURIComponent(JSON.stringify(payload))))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function decodeTrip(str) {
+  try {
+    let b64 = str.replace(/-/g, '+').replace(/_/g, '/');
+    while (b64.length % 4) b64 += '=';
+    const p = JSON.parse(decodeURIComponent(escape(atob(b64))));
+    if (!p || !Array.isArray(p.i)) return null;
+    return p;
+  } catch (e) { return null; }
+}
+
+function buildShareText(trip) {
+  const metas = [];
+  if (trip.destination) metas.push('📍' + trip.destination);
+  if (trip.date) metas.push('📅' + fmtDate(trip.date));
+  const packed = trip.items.filter(i => i.checked).length;
+  const lines = [
+    `${trip.emoji} ${trip.name}${metas.length ? ' ' + metas.join(' ') : ''}`,
+    `🎒 清单进度 ${packed}/${trip.items.length} · 来自「旅行小行囊」`,
+  ];
+  CATEGORIES.forEach(c => {
+    const items = trip.items.filter(it => it.category === c.id);
+    if (!items.length) return;
+    lines.push(`${c.emoji} ${c.name}：` + items.map(it => (it.checked ? '☑' : '○') + it.text).join(' '));
+  });
+  return lines.join('\n');
+}
+
+let shareTextVer = '';
+
+function openShare() {
+  const trip = activeTrip();
+  if (!trip) return;
+  if (!trip.items.length) { toast('清单还是空的，先装点东西进来吧', '🧳'); return; }
+  shareTextVer = buildShareText(trip);
+  $('#shareLink').value = location.origin + location.pathname + '#s=' + encodeTrip(trip);
+  $('#shareText').textContent = shareTextVer;
+  $('#shareNative').hidden = !navigator.share;
+  showModal($('#shareModal'));
+}
+
+$('#shareNative').addEventListener('click', () => {
+  if (!navigator.share) return;
+  navigator.share({ title: '我的出行清单 🧳', text: shareTextVer, url: $('#shareLink').value }).catch(() => {});
+});
+
+async function copyText(text, okMsg, emoji) {
+  const ok = () => toast(okMsg, emoji || '📋');
+  try { await navigator.clipboard.writeText(text); ok(); return; } catch (e) { /* 退回 execCommand */ }
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;opacity:0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    ta.remove();
+    ok();
+  } catch (e) { toast('复制失败，请长按手动复制', '🥺'); }
+}
+
+/* ================= 接收分享 ================= */
+let pendingShare = null;
+
+function checkShareHash() {
+  const m = location.hash.match(/^#s=([A-Za-z0-9\-_]+)$/);
+  if (!m) return;
+  const p = decodeTrip(m[1]);
+  if (!p) return;
+  pendingShare = p;
+  const catCount = {};
+  let n = 0;
+  p.i.forEach(([c]) => { catCount[c] = (catCount[c] || 0) + 1; n++; });
+  $('#recvEmoji').textContent = p.e || '🎁';
+  $('#recvDesc').textContent = `「${p.n || '朋友的行程'}」共 ${n} 件物品（含勾选状态），导入后可自由修改～`;
+  $('#recvItems').innerHTML = CATEGORIES.filter(c => catCount[c.id]).map(c =>
+    `<span class="recv-chip">${c.emoji}${c.name} × ${catCount[c.id]}</span>`).join('');
+  showModal($('#receiveModal'));
+}
+
+$('#recvImport').addEventListener('click', () => {
+  if (!pendingShare) return;
+  const p = pendingShare;
+  const trip = {
+    id: uid(), name: (p.n || '朋友的行程').slice(0, 20), emoji: p.e || '🧳',
+    destination: String(p.d || '').slice(0, 20), date: p.t || '', createdAt: Date.now(),
+    items: p.i.map(([c, t, k]) => ({
+      id: uid(), text: String(t).slice(0, 30),
+      category: CATEGORIES.some(x => x.id === c) ? c : 'misc',
+      checked: !!k,
+    })),
+  };
+  state.trips.push(trip);
+  state.activeTripId = trip.id;
+  pendingShare = null;
+  lastAllPacked = false;
+  save();
+  hideModal($('#receiveModal'));
+  history.replaceState(null, '', location.pathname + location.search);
+  renderAll();
+  toast(`已导入「${trip.name}」，可用「重新出发」重置勾选`, trip.emoji);
+});
+
+$('#recvSkip').addEventListener('click', () => {
+  pendingShare = null;
+  hideModal($('#receiveModal'));
+  history.replaceState(null, '', location.pathname + location.search);
 });
 
 /* ================= 全局事件委托 ================= */
@@ -636,6 +804,18 @@ document.addEventListener('click', e => {
 
     case 'open-library':
       openLibrary();
+      break;
+
+    case 'share-trip':
+      openShare();
+      break;
+
+    case 'copy-link':
+      copyText($('#shareLink').value, '链接已复制，快发给朋友吧', '🔗');
+      break;
+
+    case 'copy-text':
+      copyText(shareTextVer, '文字清单已复制', '📋');
       break;
 
     case 'reset-all': {
@@ -751,3 +931,4 @@ window.addEventListener('resize', () => {
 /* ================= 启动 ================= */
 buildEmojiGrid();
 renderAll();
+checkShareHash();

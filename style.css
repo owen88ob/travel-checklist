@@ -201,7 +201,7 @@ a:hover { text-decoration: underline wavy #FFC9BD; }
 .icon-btn:hover { transform: translateY(-2px) rotate(-6deg); border-color: #FFC9BD; box-shadow: 0 6px 14px rgba(230, 140, 120, .2); }
 .icon-btn:active { transform: scale(.9); }
 
-.hero-right { display: flex; align-items: center; gap: 22px; }
+.hero-right { display: flex; align-items: center; gap: 22px; padding-top: 38px; }
 
 .hero-actions { display: flex; flex-direction: column; gap: 10px; }
 
@@ -503,6 +503,53 @@ a:hover { text-decoration: underline wavy #FFC9BD; }
 /* ---------- 彩带画布 ---------- */
 #confetti { position: fixed; inset: 0; z-index: 100; pointer-events: none; }
 
+/* ---------- 分享行程 ---------- */
+.share-block { margin-bottom: 16px; }
+
+.share-label { display: block; font-size: 13px; font-weight: 800; color: #C08F79; margin-bottom: 7px; }
+
+.share-row { display: flex; gap: 8px; }
+.share-row .input { flex: 1; min-width: 0; font-size: 12.5px; color: #A97E6D; }
+
+.share-text {
+  font-family: inherit; white-space: pre-wrap; word-break: break-all;
+  background: #FFF6EE; border: 2px solid var(--line-soft); border-radius: 14px;
+  padding: 12px 14px; font-size: 13px; line-height: 1.75; color: #8A6A5B;
+  max-height: 190px; overflow-y: auto; margin-bottom: 10px;
+  scrollbar-width: thin; scrollbar-color: #F0D5C6 transparent;
+}
+.share-text::-webkit-scrollbar { width: 6px; }
+.share-text::-webkit-scrollbar-thumb { background: #F0D5C6; border-radius: 6px; }
+
+/* ---------- 物品库自定义物品 ---------- */
+.lib-chip { cursor: pointer; }
+
+.lib-chip-custom { position: relative; padding-right: 30px; }
+.chip-star { font-style: normal; font-size: 10px; color: #F2B84B; margin-left: 4px; }
+.chip-del {
+  position: absolute; top: -7px; right: -5px; width: 18px; height: 18px;
+  display: grid; place-items: center; border-radius: 50%;
+  background: #FFE3DC; color: #E76A55; font-size: 10px; font-weight: 900;
+  border: 1.5px solid #fff; box-shadow: 0 2px 6px rgba(230, 140, 120, .3);
+  opacity: 0; transform: scale(.6);
+  transition: opacity .2s, transform .25s var(--spring), background .2s, color .2s;
+}
+.lib-chip-custom:hover .chip-del, .chip-del:focus-visible { opacity: 1; transform: scale(1); }
+.chip-del:hover { background: #F76A6A; color: #fff; }
+@media (hover: none) { .chip-del { opacity: 1; transform: scale(1); } }
+
+.lib-add { display: inline-flex; gap: 6px; align-items: center; }
+.lib-add .input { width: 150px; }
+.lib-add .btn { padding: 7px 12px; }
+
+/* ---------- 收到分享 ---------- */
+.recv-items { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 12px 0 4px; }
+
+.recv-chip {
+  padding: 5px 12px; border-radius: 999px; font-size: 13px; font-weight: 700;
+  background: #FFF1E6; border: 1.5px solid #FFDFC8; color: #C08F79;
+}
+
 /* ---------- 响应式 ---------- */
 @media (max-width: 760px) {
   .page { padding: 18px 14px calc(24px + env(safe-area-inset-bottom)); }
@@ -513,7 +560,7 @@ a:hover { text-decoration: underline wavy #FFC9BD; }
   .hero-info { padding-right: 0; }
   .hero-edit { position: static; margin-left: auto; }
   .hero-text h2 { font-size: 22px; }
-  .hero-right { justify-content: space-between; }
+  .hero-right { padding-top: 0; justify-content: space-between; }
   .ring-wrap { width: 118px; height: 118px; }
   .ring-pct { font-size: 26px; }
   .hero-actions { align-items: stretch; }
@@ -526,6 +573,9 @@ a:hover { text-decoration: underline wavy #FFC9BD; }
   .modal { padding: 20px 16px; border-radius: 24px; }
   .emoji-grid { grid-template-columns: repeat(6, 1fr); gap: 6px; }
   .modal-library { max-height: calc(100dvh - 40px); }
+
+  .share-row { flex-direction: column; }
+  .lib-add .input { width: 118px; }
 }
 
 @media (max-width: 400px) {

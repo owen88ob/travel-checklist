@@ -110,6 +110,44 @@
     </div>
   </div>
 
+  <!-- ===== 分享行程弹窗 ===== -->
+  <div class="modal-overlay" id="shareModal">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="shareTitle">
+      <h3 id="shareTitle">📤 分享行程</h3>
+      <p class="modal-tip">把清单分享给朋友：对方打开链接即可一键导入，也可以直接复制文字清单～</p>
+      <div class="share-block">
+        <span class="share-label">🔗 分享链接（含完整清单）</span>
+        <div class="share-row">
+          <input id="shareLink" class="input input-sm" readonly aria-label="分享链接">
+          <button class="btn btn-primary btn-sm" data-action="copy-link">复制</button>
+        </div>
+      </div>
+      <div class="share-block">
+        <span class="share-label">📝 文字版清单</span>
+        <pre class="share-text" id="shareText"></pre>
+        <button class="btn btn-ghost btn-sm" data-action="copy-text">复制文字清单</button>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" data-close>关闭</button>
+        <button class="btn btn-primary" id="shareNative" hidden>系统分享 📤</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 接收分享弹窗 ===== -->
+  <div class="modal-overlay" id="receiveModal">
+    <div class="modal modal-sm" role="dialog" aria-modal="true">
+      <div class="confirm-emoji" id="recvEmoji">🎁</div>
+      <h3>收到一份分享清单！</h3>
+      <p id="recvDesc"></p>
+      <div class="recv-items" id="recvItems"></div>
+      <div class="modal-actions center">
+        <button class="btn btn-ghost" id="recvSkip">暂不导入</button>
+        <button class="btn btn-primary" id="recvImport">导入为我的行程 🎒</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast 提示 -->
   <div class="toast" id="toast" role="status"><span id="toastEmoji">✨</span><span id="toastMsg"></span></div>
 
