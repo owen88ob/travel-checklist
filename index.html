@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>旅行小行囊 · 出行清单</title>
+  <meta name="description" content="温馨可爱的旅行物品清单：多行程管理、丰富分类预设与场景模板，数据保存在本地浏览器。">
+  <meta name="theme-color" content="#FFF4EA">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧳</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ===== 背景装饰 ===== -->
+  <div class="bg-decor" aria-hidden="true">
+    <div class="sun"></div>
+    <div class="cloud c1"></div>
+    <div class="cloud c2"></div>
+    <div class="cloud c3"></div>
+    <div class="plane-track"><span class="plane">✈️</span></div>
+    <span class="balloon">🎈</span>
+    <span class="blob blob1"></span>
+    <span class="blob blob2"></span>
+  </div>
+
+  <!-- 彩带画布 -->
+  <canvas id="confetti"></canvas>
+
+  <div class="page">
+    <!-- ===== 顶部 ===== -->
+    <header class="site-header">
+      <div class="logo">
+        <span class="logo-emoji">🧳</span>
+        <div class="logo-text">
+          <h1>旅行小行囊</h1>
+          <p>收拾好心情，出发吧～ ✨</p>
+        </div>
+      </div>
+    </header>
+
+    <!-- ===== 行程切换条 ===== -->
+    <nav class="trip-bar" id="tripBar" aria-label="行程切换"></nav>
+
+    <!-- ===== 主内容（JS 渲染） ===== -->
+    <main id="main"></main>
+
+    <footer class="site-footer">
+      <p>🌈 清单数据仅保存在你的浏览器本地，放心使用 ·
+        <a href="https://github.com/owen88ob/travel-checklist" target="_blank" rel="noopener">GitHub</a>
+      </p>
+    </footer>
+  </div>
+
+  <!-- ===== 行程编辑弹窗 ===== -->
+  <div class="modal-overlay" id="tripModal">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="tripModalTitle">
+      <h3 id="tripModalTitle">✈️ 创建新行程</h3>
+      <label class="field">
+        <span class="field-label">行程名称 *</span>
+        <input id="tripName" class="input" maxlength="20" placeholder="比如：五一杭州之行" autocomplete="off">
+      </label>
+      <div class="field">
+        <span class="field-label">挑个小图标</span>
+        <div class="emoji-grid" id="emojiGrid"></div>
+      </div>
+      <label class="field">
+        <span class="field-label">目的地</span>
+        <input id="tripDest" class="input" maxlength="20" placeholder="比如：杭州 · 西湖" autocomplete="off">
+      </label>
+      <label class="field">
+        <span class="field-label">出发日期</span>
+        <input id="tripDate" class="input" type="date">
+      </label>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" data-close>取消</button>
+        <button class="btn btn-primary" id="tripSave">出发！🎒</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 物品库弹窗 ===== -->
+  <div class="modal-overlay" id="libraryModal">
+    <div class="modal modal-library" role="dialog" aria-modal="true" aria-labelledby="libraryTitle">
+      <div class="modal-head">
+        <h3 id="libraryTitle">📦 物品库</h3>
+        <button class="icon-btn" data-close aria-label="关闭">✕</button>
+      </div>
+      <p class="modal-tip">点选要带上的物品，一次可以选多件哦～</p>
+      <div class="library-body" id="libraryBody"></div>
+      <div class="library-foot">
+        <span class="lib-count" id="libCount">已选 0 件</span>
+        <button class="btn btn-primary" id="libAdd">加入清单 🎁</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 确认弹窗 ===== -->
+  <div class="modal-overlay" id="confirmModal">
+    <div class="modal modal-sm" role="alertdialog" aria-modal="true">
+      <div class="confirm-emoji" id="confirmEmoji">🥺</div>
+      <h3 id="confirmTitle"></h3>
+      <p id="confirmDesc"></p>
+      <div class="modal-actions center">
+        <button class="btn btn-ghost" id="confirmCancel">再想想</button>
+        <button class="btn btn-danger" id="confirmOk">确定</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast 提示 -->
+  <div class="toast" id="toast" role="status"><span id="toastEmoji">✨</span><span id="toastMsg"></span></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
